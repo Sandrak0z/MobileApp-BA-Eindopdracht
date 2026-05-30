@@ -1,11 +1,11 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function BlogDetails() {
+export default function NewsDetails() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Blog Details Scherm</Text>
-      <Text style={styles.subText}>Hier kun je straks de nieuwste blogartikelen lezen.</Text>
+      <Text style={styles.text}>News Details Scherm</Text>
+      <Text style={styles.subText}>Hier kun je straks de nieuwste nieuwsartikelen lezen.</Text>
     </View>
   );
 }

@@ -1,12 +1,10 @@
 import * as React from 'react';
-import { AppRegistry } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from './Screens/HomeScreen'; 
 import ProductDetails from './Screens/ProductDetails';
-import BlogDetails from './Screens/BlogDetails';
-
+import NewsDetails from './Screens/NewsDetailsScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -14,11 +12,10 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
         
-
         <Stack.Screen 
           name="Home" 
           component={HomeScreen} 
-          options={{ title: 'Winkel' }} 
+          options={{ headerShown: false }} 
         />
         
         <Stack.Screen 
@@ -28,9 +25,9 @@ export default function App() {
         />
         
         <Stack.Screen 
-          name="BlogDetails" 
-          component={BlogDetails} 
-          options={{ title: 'Blog Details' }} 
+          name="NewsDetails" 
+          component={NewsDetails} 
+          options={{ title: 'News Details' }} 
         />
         
       </Stack.Navigator>
