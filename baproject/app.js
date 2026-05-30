@@ -1,33 +1,39 @@
-import React from 'react';
-import { StyleSheet, Text, View, StatusBar, AppRegistry } from 'react-native';
+import * as React from 'react';
+import { AppRegistry } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import HomeScreen from './Screens/HomeScreen'; 
+import ProductDetails from './Screens/ProductDetails';
+import BlogDetails from './Screens/BlogDetails';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      
-      <View style={styles.content}>
-        <Text style={styles.text}>test!</Text>
-      </View>
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        
+
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ title: 'Winkel' }} 
+        />
+        
+        <Stack.Screen 
+          name="ProductDetails" 
+          component={ProductDetails} 
+          options={{ title: 'Product Details' }} 
+        />
+        
+        <Stack.Screen 
+          name="BlogDetails" 
+          component={BlogDetails} 
+          options={{ title: 'Blog Details' }} 
+        />
+        
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 50, 
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-});
-
-AppRegistry.registerComponent('main', () => App);

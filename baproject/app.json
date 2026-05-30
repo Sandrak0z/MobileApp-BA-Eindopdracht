@@ -1,4 +1,7 @@
 {
   "name": "Busleyden Atheneum",
-  "slug": "Busleyden Atheneum"
+  "slug": "Busleyden Atheneum",
+  "plugins": [
+    "expo-asset"
+  ]
 }
