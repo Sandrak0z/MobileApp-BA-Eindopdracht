@@ -1,26 +1,26 @@
 import React from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'; 
 
-export default function NewsCard(props) {
-  const item = props.item || {}; 
+export default function NewsCard({ item, onPress }) {
+  const newsItem = item || {}; 
 
   return (
-    <TouchableOpacity style={styles.card} onPress={props.onPress}>
+    <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.imageContainer}>
         <Image 
-          source={{ uri: item.image || "https://via.placeholder.com/150" }} 
+          source={{ uri: newsItem.image || "https://via.placeholder.com/150" }} 
           style={styles.image} 
         />
         <View style={styles.greenBar} />
       </View>
       
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>{item.title || "Geen titel"}</Text>
-        <Text style={styles.date}>{item.date || "Onbekende datum"}</Text>
+        <Text style={styles.title} numberOfLines={2}>{newsItem.title || "Geen titel"}</Text>
+        <Text style={styles.date}>{newsItem.date || "Onbekende datum"}</Text>
         
         <View style={styles.badgeRow}>
-          <View style={[styles.badge, { backgroundColor: item.campusColor || "#ca4329" }]}>
-            <Text style={styles.badgeText}>{item.campus || "Algemeen"}</Text>
+          <View style={[styles.badge, { backgroundColor: newsItem.campusColor || "#ca4329" }]}>
+            <Text style={styles.badgeText}>{newsItem.campus || "Algemeen"}</Text>
           </View>
         </View>
       </View>
@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
   badge: { 
     paddingHorizontal: 8, 
     paddingVertical: 4, 
+    borderRadius: 4,
     marginBottom: 4,
     marginRight: 4
   },
