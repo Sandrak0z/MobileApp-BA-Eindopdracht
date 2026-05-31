@@ -27,10 +27,20 @@ export default function CampusDetailsScreen({ route, navigation }) {
           <View style={[styles.placeholderImage, { backgroundColor: displayColor }]} />
         )}
         
-      
+        
+      </View>
+
+      <View style={styles.contentCard}>
+        
+        <View style={[styles.tag, { backgroundColor: displayColor + '15' }]}>
+          <Text style={[styles.tagText, { color: displayColor }]}>
+            {campusItem.description ? campusItem.description.toUpperCase() : 'ALGEMEEN'}
+          </Text>
+        </View>
 
         <Text style={styles.title}>{campusItem.name}</Text>
         
+        {/* Adres */}
         <View style={styles.addressRow}>
           <Text style={styles.addressIcon}>📍</Text>
           <Text style={styles.addressText}>{campusItem.address || 'Geen adres beschikbaar'}</Text>
@@ -75,4 +85,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 10 },
   addressRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   addressIcon: { fontSize: 16, marginRight: 6 },
+  addressText: { fontSize: 14, color: '#4a5568', flex: 1 },
+  divider: { height: 1, backgroundColor: '#edf0f2', marginBottom: 20 },
+  bodyText: { fontSize: 14, color: '#4a5568', lineHeight: 22 },
+  mapsButton: { width: '100%', height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  mapsButtonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });
