@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; 
 import NewsCard from '../Components/NewsCard';
 import CampusCard from '../Components/CampusCard';
@@ -27,6 +27,10 @@ const HomeScreen = ({ navigation }) => {
   const [campuses, setCampuses] = useState([]);
   const [selectedStudiegebied, setSelectedStudiegebied] = useState("");
   const [selectedCampus, setSelectedCampus] = useState("");
+  
+  // Nieuwe states voor zoeken en sorteren van het nieuws
+  const [newsSearchQuery, setNewsSearchQuery] = useState("");
+  const [newsSortBy, setNewsSortBy] = useState("datum-nieuw");
 
   useEffect(() => {
     const headers = { 'Authorization': 'Bearer 6af37f24b55e7761df0f2e346acfe34ae929115e9f8e66b6f9f1c74baabd4746' };
@@ -37,8 +41,6 @@ const HomeScreen = ({ navigation }) => {
         const rawItems = newsData.items || [];
         setNews(rawItems.map(item => {
           const IDs = item.fieldData?.['betrokken-scholen-2'] || [];
-          
-          
           const gekoppeldeScholen = IDs
             .map(id => campusNames[id])
             .filter(name => name !== undefined)
@@ -47,8 +49,8 @@ const HomeScreen = ({ navigation }) => {
           return {
             id: item.id,
             title: item.fieldData?.name || "Geen titel",
+            rawDate: item.lastPublished || "", // Behouden voor sorting logica
             date: item.lastPublished ? new Date(item.lastPublished).toLocaleDateString('nl-BE') : "Onbekende datum",
-            
             campus: gekoppeldeScholen || "Algemeen Nieuws",
             campusColor: "#236b41",
             image: item.fieldData?.['main-image']?.url || "https://via.placeholder.com/150",
@@ -79,10 +81,17 @@ const HomeScreen = ({ navigation }) => {
     return selectedStudiegebied === "" || item.description === selectedStudiegebied;
   });
 
+  // sorteren
   const filteredNews = news.filter(item => {
-    if (selectedCampus === "") return true;
+    const matchesSearch = item.title.toLowerCase().includes(newsSearchQuery.toLowerCase());
+    
+    if (selectedCampus === "") return matchesSearch;
     if (!item.betrokkenScholen || !Array.isArray(item.betrokkenScholen)) return false;
-    return item.betrokkenScholen.includes(selectedCampus);
+    
+    return matchesSearch && item.betrokkenScholen.includes(selectedCampus);
+  }).sort((a, b) => {
+    if (newsSortBy === "naam-az") return a.title.localeCompare(b.title);
+    if (newsSortBy === "naam-za") return b.title.localeCompare(a.title);
   });
 
   return (
@@ -139,9 +148,18 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.sectionMainTitle}>Altijd op de hoogte</Text>
         </View>
 
-        <View style={styles.pickerCardContainer}>
-          <Text style={styles.miniLabel}>Filter nieuws per campus</Text>
-          <View style={styles.pickerWrapper}>
+        {/* Zoekbalk  */}
+        <TextInput 
+          style={styles.searchBar} 
+          placeholder="Zoek een nieuwsbericht..." 
+          value={newsSearchQuery} 
+          onChangeText={setNewsSearchQuery} 
+        />
+
+        {/* Pickers  */}
+        <View style={styles.dropdownRow}>
+          <View style={styles.pickerContainer}>
+            <Text style={styles.miniLabel}>Campus</Text>
             <Picker
               selectedValue={selectedCampus}
               onValueChange={(value) => setSelectedCampus(value)}
@@ -150,6 +168,18 @@ const HomeScreen = ({ navigation }) => {
               {Object.keys(campusNames).map((key) => (
                 <Picker.Item key={key} label={campusNames[key]} value={key} />
               ))}
+            </Picker>
+          </View>
+
+          <View style={styles.pickerContainer}>
+            <Text style={styles.miniLabel}>Sorteer op</Text>
+            <Picker
+              selectedValue={newsSortBy}
+              onValueChange={(value) => setNewsSortBy(value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="A-Z" value="naam-az" />
+              <Picker.Item label="Z-A" value="naam-za" />
             </Picker>
           </View>
         </View>
@@ -180,9 +210,11 @@ const styles = StyleSheet.create({
   sectionHeader: { marginBottom: 14, marginTop: 12 },
   sectionTitle: { fontSize: 11, fontWeight: '800', color: '#8ba653', letterSpacing: 1.5 },
   sectionMainTitle: { fontSize: 24, fontWeight: '800', color: '#000000' },
+  searchBar: { width: '100%', height: 50, backgroundColor: '#ffffff', borderRadius: 12, paddingHorizontal: 15, marginBottom: 15, borderWidth: 1, borderColor: '#e1e4e8', fontSize: 16 },
+  dropdownRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  pickerContainer: { flex: 0.48, backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: '#e1e4e8', padding: 5 },
   pickerCardContainer: { backgroundColor: '#fff', padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#e1e4e8', marginBottom: 16 },
   miniLabel: { fontSize: 10, color: '#888', fontWeight: 'bold', marginLeft: 10, textTransform: 'uppercase', marginBottom: 2 },
-  pickerWrapper: { backgroundColor: '#f6f8fa', borderRadius: 10 },
   picker: { height: 50, width: '100%' },
   campusGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' }
 });
