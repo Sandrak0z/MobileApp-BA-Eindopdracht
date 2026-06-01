@@ -1,12 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 
-// Bereken de breedte zodat er exact 2 kaarten naast elkaar passen met marges
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 44) / 2; 
 
 const ProductCard = ({ titel, prijs, foto, omschrijving, onPress }) => {
-  // VEILIGHEIDSHANDLING: Als prijs undefined, null of NaN is, zet hem op 0
   const veiligePrijs = typeof prijs === 'number' && !isNaN(prijs) ? prijs : Number(prijs) || 0;
 
   return (
@@ -30,7 +28,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#edf0f2',
     overflow: 'hidden',
-    // Subtiele schaduw voor iOS & Android
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -61,7 +58,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#236b41', // Jouw donkergroene huiskleur
+    color: '#236b41', 
   },
 });
 

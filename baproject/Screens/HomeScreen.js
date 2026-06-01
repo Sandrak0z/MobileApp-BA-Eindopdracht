@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Image, TouchableOpacity, Switch } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Image, TouchableOpacity, Switch, Button } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; 
 import NewsCard from '../Components/NewsCard';
 import CampusCard from '../Components/CampusCard';
@@ -11,8 +11,6 @@ const studiegebieden = {
   "MENS & WELZIJN.": "Mens & Welzijn",
   "GEZONDHEID & WETENSCHAP": "Gezondheid & Wetenschap",
   "INTEGRAAL & CREATIEF": "Integraal & Creatief",
-
-
 };
 
 const campusNames = {
@@ -40,20 +38,26 @@ const HomeScreen = ({ navigation }) => {
   const [campuses, setCampuses] = useState([]);
   const [products, setProducts] = useState([]); 
 
+  // game state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [clicks, setClicks] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(20);
+  const [gameResult, setGameResult] = useState("");
+
   const [selectedStudiegebied, setSelectedStudiegebied] = useState("");
   const [selectedCampus, setSelectedCampus] = useState("");
-  
   const [selectedProductCategory, setSelectedProductCategory] = useState("");
   const [productSortBy, setProductSortBy] = useState("naam-az");
   const [showOnlyPromo, setShowOnlyPromo] = useState(false);
-  
   const [newsSearchQuery, setNewsSearchQuery] = useState("");
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [newsSortBy, setNewsSortBy] = useState("naam-az");
 
+  // fetch data van api
   useEffect(() => {
     const headers = { 'Authorization': 'Bearer 6af37f24b55e7761df0f2e346acfe34ae929115e9f8e66b6f9f1c74baabd4746' };
 
+    // nieuws api
     fetch('https://api.webflow.com/v2/collections/6a061320dcff5cb5330579f8/items', { headers })
       .then(res => res.json())
       .then(newsData => {
@@ -78,6 +82,7 @@ const HomeScreen = ({ navigation }) => {
       })
       .catch(err => console.error("Fout bij nieuws:", err));
 
+    // campus api
     fetch('https://api.webflow.com/v2/collections/6a062d37698df9a79b6bd250/items', { headers })
       .then(res => res.json())
       .then(campusData => {
@@ -94,6 +99,7 @@ const HomeScreen = ({ navigation }) => {
       })
       .catch(err => console.error("Fout bij campussen:", err));
 
+    // product api
     fetch('https://api.webflow.com/v2/sites/69f20ebbdfedc1aa82aad6fa/products', { headers })
       .then(res => res.json())
       .then(data => {
@@ -101,7 +107,6 @@ const HomeScreen = ({ navigation }) => {
         setProducts(rawItems.map(item => {
           const skuFields = item.skus?.[0]?.fieldData || {};
           const productFields = item.product?.fieldData || {};
-
           const webflowCategories = productFields.category || productFields.categories || [];
 
           return {
@@ -116,6 +121,47 @@ const HomeScreen = ({ navigation }) => {
       })
       .catch(err => console.error("Fout bij products fetch:", err));
   }, []);
+
+  // game timer
+  useEffect(() => {
+    let klok = null;
+    if (isPlaying) {
+      klok = setInterval(() => {
+        setSecondsLeft((tijd) => {
+          if (tijd <= 1) {
+            clearInterval(klok);
+            setIsPlaying(false);
+            setGameResult("lost");
+            return 0;
+          }
+          return tijd - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (klok) clearInterval(klok);
+    };
+  }, [isPlaying]);
+
+  // game functies
+  const startSpel = () => {
+    setClicks(0);
+    setSecondsLeft(20);
+    setGameResult("");
+    setIsPlaying(true);
+  };
+
+  const klikOpLogo = () => {
+    if (!isPlaying) return;
+
+    const nieuweScore = clicks + 1;
+    setClicks(nieuweScore);
+
+    if (nieuweScore >= 30) {
+      setIsPlaying(false);
+      setGameResult("won");
+    }
+  };
 
   const filteredCampuses = campuses.filter(item => {
     return selectedStudiegebied === "" || item.description === selectedStudiegebied;
@@ -162,9 +208,54 @@ const HomeScreen = ({ navigation }) => {
 
       <View style={styles.content}>
         
-        <View style={[styles.sectionHeader, { marginTop: 15 }]}>
+        {/* game sectie */}
+        <View style={styles.mijnGameBox}>
+          <Text style={styles.gameTitelTekst}>Jelle's Diploma Stempel Marathon</Text>
+          
+          {!isPlaying && gameResult === "" && (
+            <View style={{ alignItems: 'center', padding: 10 }}>
+              <Text style={styles.gameInfoTekst}>Klik binnen 20 seconden exact 30 keer op het BA logo om alle diploma's te stempelen voor de ceremonie begint!</Text>
+              <Button title="Start Marathon" color="#236b41" onPress={startSpel} />
+            </View>
+          )}
+
+          {isPlaying && (
+            <View style={{ alignItems: 'center', width: '100%' }}>
+              <View style={styles.statistiekRij}>
+                <Text style={styles.statTekst}>Aantal: {clicks}/30</Text>
+                <Text style={styles.statTekst}>⏱️ Tijd: {secondsLeft}s</Text>
+              </View>
+
+              <TouchableOpacity onPress={klikOpLogo} style={styles.logoKlikker}>
+                <Image source={require('../images/logoBusl.jpg')} style={{ width: 110, height: 110, borderRadius: 55 }} />
+              </TouchableOpacity>
+              
+              <Text style={{ fontStyle: 'italic', color: '#666', marginTop: 10 }}>Stempel door op het logo te klikken!</Text>
+            </View>
+          )}
+
+          {gameResult === "won" && (
+            <View style={{ alignItems: 'center', padding: 10 }}>
+              <Text style={styles.winstTitel}>🎉 Gelukt! Iedereen is afgestudeerd!</Text>
+              <Text style={styles.winstSub}>Directeur Jelle Verelst schenkt je 10% korting in de webshop:</Text>
+              <Text style={styles.kortingCode}>BA-STEMPEL-10</Text>
+              <Button title="Opnieuw Spelen" color="#236b41" onPress={startSpel} />
+            </View>
+          )}
+
+          {gameResult === "lost" && (
+            <View style={{ alignItems: 'center', padding: 10 }}>
+              <Text style={styles.verliesTitel}>⏰ Te laat! De ceremonie begon al...</Text>
+              <Text style={styles.winstSub}>Niet alle diploma's waren gestempeld. Je eindstand: {clicks} stempels.</Text>
+              <Button title="Probeer Opnieuw" color="#d9534f" onPress={startSpel} />
+            </View>
+          )}
+        </View>
+
+        {/* campussen sectie */}
+        <View style={[styles.sectionHeader, { marginTop: 25 }]}>
           <Text style={styles.sectionTitle}>ONZE CAMPUSSEN</Text>
-          <Text style={styles.sectionMainTitle}>Kies je eigen pad</Text>
+          <Text style={styles.sectionMainTitle}>Kies je eigen path</Text>
         </View>
 
         <View style={styles.pickerCardContainer}>
@@ -192,6 +283,7 @@ const HomeScreen = ({ navigation }) => {
           ))}
         </View>
 
+        {/* nieuws sectie */}
         <View style={[styles.sectionHeader, { marginTop: 30 }]}>
           <Text style={styles.sectionTitle}>NIEUWS & UPDATES</Text>
           <Text style={styles.sectionMainTitle}>Altijd op de hoogte</Text>
@@ -243,6 +335,7 @@ const HomeScreen = ({ navigation }) => {
           />
         ))}
 
+        {/* webshop sectie */}
         <View style={[styles.sectionHeader, { marginTop: 30 }]}>
           <Text style={styles.sectionTitle}>SCHOOLWEBSHOP</Text>
           <Text style={styles.sectionMainTitle}>Artikelen & Merch</Text>
@@ -342,7 +435,18 @@ const styles = StyleSheet.create({
   campusGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
   productGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
   switchWrapper: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
-  switchLabel: { fontSize: 13, fontWeight: '700', color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.5 }
+  switchLabel: { fontSize: 13, fontWeight: '700', color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.5 },
+  
+  mijnGameBox: { backgroundColor: '#ffffff', padding: 16, borderRadius: 14, borderWidth: 1, borderColor: '#ccc', marginTop: 15, alignItems: 'center' },
+  gameTitelTekst: { fontSize: 14, fontWeight: 'bold', color: '#236b41', marginBottom: 8 },
+  gameInfoTekst: { fontSize: 13, color: '#333', textAlign: 'center', marginBottom: 14, lineHeight: 18 },
+  statistiekRij: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 15 },
+  statTekst: { fontSize: 15, fontWeight: 'bold' },
+  logoKlikker: { backgroundColor: '#f0f0f0', padding: 8, borderRadius: 65, borderWidth: 1, borderColor: '#bbb' },
+  winstTitel: { fontSize: 16, fontWeight: 'bold', color: '#236b41', textAlign: 'center' },
+  verliesTitel: { fontSize: 16, fontWeight: 'bold', color: '#d9534f', textAlign: 'center' },
+  winstSub: { fontSize: 13, color: '#555', textAlign: 'center', marginVertical: 8 },
+  kortingCode: { fontSize: 18, fontWeight: 'bold', color: '#236b41', backgroundColor: '#eef6f0', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#236b41', overflow: 'hidden', marginBottom: 14 }
 });
 
 export default HomeScreen;
