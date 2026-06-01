@@ -45,22 +45,24 @@ const HomeScreen = ({ navigation }) => {
         setNews(rawItems.map(item => {
           const IDs = item.fieldData?.['betrokken-scholen-2'] || [];
           const gekoppeldeScholen = IDs.map(id => campusNames[id]).filter(Boolean).join(', ');
+          const fields = item.fieldData || {};
 
           return {
             id: item.id,
-            title: item.fieldData?.name || "Geen titel",
+            title: fields.name || "Geen titel",
             rawDate: item.lastPublished || "",
             date: item.lastPublished ? new Date(item.lastPublished).toLocaleDateString('nl-BE') : "Onbekende datum",
             campus: gekoppeldeScholen || "Algemeen Nieuws",
             campusColor: "#236b41",
-            image: item.fieldData?.['main-image']?.url || "https://via.placeholder.com/150",
-            betrokkenScholen: IDs
+            image: fields['main-image']?.url || fields.mainImage?.url || "https://via.placeholder.com/150",
+            betrokkenScholen: IDs,
+            inhoud: fields['post-body'] || fields.maincontent || fields.description || "Geen tekst beschikbaar"
           };
         }));
       })
       .catch(err => console.error("Fout bij nieuws:", err));
 
-    fetch('https://api.webflow.com/v2/collections/6a062d37698df9a79b6bd250/items', { headers })
+      fetch('https://api.webflow.com/v2/collections/6a062d37698df9a79b6bd250/items', { headers })
       .then(res => res.json())
       .then(campusData => {
         const rawItems = campusData.items || [];
@@ -108,8 +110,6 @@ const HomeScreen = ({ navigation }) => {
   }).sort((a, b) => {
     if (newsSortBy === "naam-az") return a.title.localeCompare(b.title);
     if (newsSortBy === "naam-za") return b.title.localeCompare(a.title);
-    if (newsSortBy === "datum-oud") return new Date(a.rawDate) - new Date(b.rawDate);
-    return new Date(b.rawDate) - new Date(a.rawDate);
   });
 
   const filteredProducts = products.filter(item => {
@@ -119,7 +119,6 @@ const HomeScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       
-      {/* APP HEADER */}
       <View style={styles.appHeader}>
         <Image source={require('../images/logoBusl.jpg')} style={styles.appLogo} />
         <View style={styles.headerTextContainer}>
@@ -134,22 +133,7 @@ const HomeScreen = ({ navigation }) => {
 
       <View style={styles.content}>
         
-        <View style={[styles.pickerCardContainer, { marginTop: 10 }]}>
-          <Text style={styles.miniLabel}>Kies jouw campus (Filtert het nieuws)</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedCampus}
-              onValueChange={(value) => setSelectedCampus(value)}
-              style={styles.picker}
-            >
-              {Object.keys(campusNames).map((key) => (
-                <Picker.Item key={key} label={campusNames[key]} value={key} />
-              ))}
-            </Picker>
-          </View>
-        </View>
-
-        <View style={styles.sectionHeader}>
+        <View style={[styles.sectionHeader, { marginTop: 15 }]}>
           <Text style={styles.sectionTitle}>ONZE CAMPUSSEN</Text>
           <Text style={styles.sectionMainTitle}>Kies je eigen pad</Text>
         </View>
@@ -179,7 +163,6 @@ const HomeScreen = ({ navigation }) => {
           ))}
         </View>
 
-        {/* NIEUWS SECTIE */}
         <View style={[styles.sectionHeader, { marginTop: 30 }]}>
           <Text style={styles.sectionTitle}>NIEUWS & UPDATES</Text>
           <Text style={styles.sectionMainTitle}>Altijd op de hoogte</Text>
@@ -192,17 +175,34 @@ const HomeScreen = ({ navigation }) => {
           onChangeText={setNewsSearchQuery} 
         />
 
-        <View style={styles.pickerCardContainer}>
-          <Text style={styles.miniLabel}>Sorteer nieuws</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={newsSortBy}
-              onValueChange={(value) => setNewsSortBy(value)}
-              style={styles.picker}
-            >
-              <Picker.Item label="A-Z" value="naam-az" />
-              <Picker.Item label="Z-A" value="naam-za" />
-            </Picker>
+        <View style={styles.rowContainer}>
+          <View style={styles.pickerHalfContainer}>
+            <Text style={styles.miniLabel}>Campus</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={selectedCampus}
+                onValueChange={(value) => setSelectedCampus(value)}
+                style={styles.picker}
+              >
+                {Object.keys(campusNames).map((key) => (
+                  <Picker.Item key={key} label={campusNames[key]} value={key} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <View style={styles.pickerHalfContainer}>
+            <Text style={styles.miniLabel}>Sorteer</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={newsSortBy}
+                onValueChange={(value) => setNewsSortBy(value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="A-Z" value="naam-az" />
+                <Picker.Item label="Z-A" value="naam-za" />
+              </Picker>
+            </View>
           </View>
         </View>
         
@@ -210,11 +210,10 @@ const HomeScreen = ({ navigation }) => {
           <NewsCard 
             key={item.id} 
             item={item} 
-            onPress={() => navigation.navigate('NewsDetails', { newsItem: item })} 
+            onPress={() => navigation.navigate('NewsDetails', item)} 
           />
         ))}
 
-        {/* WEBSHOP SECTIE */}
         <View style={[styles.sectionHeader, { marginTop: 30 }]}>
           <Text style={styles.sectionTitle}>SCHOOLWEBSHOP</Text>
           <Text style={styles.sectionMainTitle}>Artikelen & Merch</Text>
@@ -260,8 +259,11 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 11, fontWeight: '800', color: '#8ba653', letterSpacing: 1.5 },
   sectionMainTitle: { fontSize: 24, fontWeight: '800', color: '#000000' },
   searchBar: { width: '100%', height: 50, backgroundColor: '#ffffff', borderRadius: 12, paddingHorizontal: 15, marginBottom: 15, borderWidth: 1, borderColor: '#e1e4e8', fontSize: 16 },
+    rowContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, width: '100%' },
+  pickerHalfContainer: { width: '48%', backgroundColor: '#fff', padding: 10, borderRadius: 14, borderWidth: 1, borderColor: '#e1e4e8' },
+  
   pickerCardContainer: { backgroundColor: '#fff', padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#e1e4e8', marginBottom: 16 },
-  miniLabel: { fontSize: 10, color: '#888', fontWeight: 'bold', marginLeft: 10, textTransform: 'uppercase', marginBottom: 2 },
+  miniLabel: { fontSize: 10, color: '#888', fontWeight: 'bold', marginLeft: 4, textTransform: 'uppercase', marginBottom: 4 },
   pickerWrapper: { backgroundColor: '#f6f8fa', borderRadius: 10 },
   picker: { height: 50, width: '100%' },
   campusGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
