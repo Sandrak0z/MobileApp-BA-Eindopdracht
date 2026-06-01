@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; 
 import NewsCard from '../Components/NewsCard';
 import CampusCard from '../Components/CampusCard';
@@ -23,6 +23,14 @@ const campusNames = {
   "6a1577328688f10406b3222f": "BA Basisverpleegkunde"
 };
 
+const categorieProducten = {
+  "": "Alle categorieën",
+  "6a060e36d98e935d2a49c3de": "Accessoires & Lifestyle", 
+  "6a060e2c93aea5900f183296": "Eten & Drinken", 
+  "6a060e1f4cd93d9ff167e604": "Baby & Kind",   
+  "6a060a7e2227d3d1e1eb363c": "Sweaters" 
+};
+
 const HomeScreen = ({ navigation }) => {
   const [news, setNews] = useState([]);
   const [campuses, setCampuses] = useState([]);
@@ -31,9 +39,12 @@ const HomeScreen = ({ navigation }) => {
   const [selectedStudiegebied, setSelectedStudiegebied] = useState("");
   const [selectedCampus, setSelectedCampus] = useState("");
   
+  const [selectedProductCategory, setSelectedProductCategory] = useState("");
+  const [productSortBy, setProductSortBy] = useState("naam-az");
+  
   const [newsSearchQuery, setNewsSearchQuery] = useState("");
   const [productSearchQuery, setProductSearchQuery] = useState("");
-  const [newsSortBy, setNewsSortBy] = useState("datum-nieuw");
+  const [newsSortBy, setNewsSortBy] = useState("naam-az");
 
   useEffect(() => {
     const headers = { 'Authorization': 'Bearer 6af37f24b55e7761df0f2e346acfe34ae929115e9f8e66b6f9f1c74baabd4746' };
@@ -62,7 +73,7 @@ const HomeScreen = ({ navigation }) => {
       })
       .catch(err => console.error("Fout bij nieuws:", err));
 
-      fetch('https://api.webflow.com/v2/collections/6a062d37698df9a79b6bd250/items', { headers })
+    fetch('https://api.webflow.com/v2/collections/6a062d37698df9a79b6bd250/items', { headers })
       .then(res => res.json())
       .then(campusData => {
         const rawItems = campusData.items || [];
@@ -86,13 +97,15 @@ const HomeScreen = ({ navigation }) => {
           const skuFields = item.skus?.[0]?.fieldData || {};
           const productFields = item.product?.fieldData || {};
 
+          const webflowCategories = productFields.category || productFields.categories || [];
+
           return {
             id: item.product?.id || item.id,
             titel: productFields.name,
             prijs: skuFields.price?.value / 100, 
             omschrijving: productFields.description,
             foto: skuFields.mainImage?.url || skuFields['main-image']?.url,
-            betrokkenScholen: [] 
+            categoriesList: Array.isArray(webflowCategories) ? webflowCategories : [webflowCategories]
           };
         }));
       })
@@ -110,10 +123,21 @@ const HomeScreen = ({ navigation }) => {
   }).sort((a, b) => {
     if (newsSortBy === "naam-az") return a.title.localeCompare(b.title);
     if (newsSortBy === "naam-za") return b.title.localeCompare(a.title);
+    return 0;
   });
 
   const filteredProducts = products.filter(item => {
-    return item.titel?.toLowerCase().includes(productSearchQuery.toLowerCase());
+    const matchesSearch = item.titel?.toLowerCase().includes(productSearchQuery.toLowerCase());
+    
+    const matchesCategory = selectedProductCategory === "" || item.categoriesList.includes(selectedProductCategory);
+    
+    return matchesSearch && matchesCategory;
+  }).sort((a, b) => {
+    if (productSortBy === "naam-az") return (a.titel || "").localeCompare(b.titel || "");
+    if (productSortBy === "naam-za") return (b.titel || "").localeCompare(a.titel || "");
+    if (productSortBy === "prijs-laag") return a.prijs - b.prijs;
+    if (productSortBy === "prijs-hoog") return b.prijs - a.prijs;
+    return 0;
   });
 
   return (
@@ -192,7 +216,7 @@ const HomeScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.pickerHalfContainer}>
-            <Text style={styles.miniLabel}>Sorteer</Text>
+            <Text style={styles.miniLabel}>Sorteer Nieuws</Text>
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={newsSortBy}
@@ -217,6 +241,39 @@ const HomeScreen = ({ navigation }) => {
         <View style={[styles.sectionHeader, { marginTop: 30 }]}>
           <Text style={styles.sectionTitle}>SCHOOLWEBSHOP</Text>
           <Text style={styles.sectionMainTitle}>Artikelen & Merch</Text>
+        </View>
+
+        <View style={styles.rowContainer}>
+          <View style={styles.pickerHalfContainer}>
+            <Text style={styles.miniLabel}>Categorie</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={selectedProductCategory}
+                onValueChange={(value) => setSelectedProductCategory(value)}
+                style={styles.picker}
+              >
+                {Object.keys(categorieProducten).map((key) => (
+                  <Picker.Item key={key} label={categorieProducten[key]} value={key} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <View style={styles.pickerHalfContainer}>
+            <Text style={styles.miniLabel}>Sorteer Prijs/Naam</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={productSortBy}
+                onValueChange={(value) => setProductSortBy(value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Naam A-Z" value="naam-az" />
+                <Picker.Item label="Naam Z-A" value="naam-za" />
+                <Picker.Item label="Prijs: Laag - Hoog" value="prijs-laag" />
+                <Picker.Item label="Prijs: Hoog - Laag" value="prijs-hoog" />
+              </Picker>
+            </View>
+          </View>
         </View>
 
         <TextInput 
@@ -259,9 +316,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 11, fontWeight: '800', color: '#8ba653', letterSpacing: 1.5 },
   sectionMainTitle: { fontSize: 24, fontWeight: '800', color: '#000000' },
   searchBar: { width: '100%', height: 50, backgroundColor: '#ffffff', borderRadius: 12, paddingHorizontal: 15, marginBottom: 15, borderWidth: 1, borderColor: '#e1e4e8', fontSize: 16 },
-    rowContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, width: '100%' },
+  rowContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, width: '100%' },
   pickerHalfContainer: { width: '48%', backgroundColor: '#fff', padding: 10, borderRadius: 14, borderWidth: 1, borderColor: '#e1e4e8' },
-  
   pickerCardContainer: { backgroundColor: '#fff', padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#e1e4e8', marginBottom: 16 },
   miniLabel: { fontSize: 10, color: '#888', fontWeight: 'bold', marginLeft: 4, textTransform: 'uppercase', marginBottom: 4 },
   pickerWrapper: { backgroundColor: '#f6f8fa', borderRadius: 10 },
