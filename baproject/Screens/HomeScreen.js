@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Image, TouchableOpacity, Switch } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; 
 import NewsCard from '../Components/NewsCard';
 import CampusCard from '../Components/CampusCard';
@@ -8,7 +8,11 @@ import ProductCard from '../Components/ProductCard';
 const studiegebieden = {
   "": "Alle studiegebieden",
   "IT & ONDERNEMEN.": "IT & Ondernemen",
-  "MENS & WELZIJN.": "Mens & Welzijn"
+  "MENS & WELZIJN.": "Mens & Welzijn",
+  "GEZONDHEID & WETENSCHAP": "Gezondheid & Wetenschap",
+  "INTEGRAAL & CREATIEF": "Integraal & Creatief",
+
+
 };
 
 const campusNames = {
@@ -41,6 +45,7 @@ const HomeScreen = ({ navigation }) => {
   
   const [selectedProductCategory, setSelectedProductCategory] = useState("");
   const [productSortBy, setProductSortBy] = useState("naam-az");
+  const [showOnlyPromo, setShowOnlyPromo] = useState(false);
   
   const [newsSearchQuery, setNewsSearchQuery] = useState("");
   const [productSearchQuery, setProductSearchQuery] = useState("");
@@ -128,10 +133,10 @@ const HomeScreen = ({ navigation }) => {
 
   const filteredProducts = products.filter(item => {
     const matchesSearch = item.titel?.toLowerCase().includes(productSearchQuery.toLowerCase());
-    
+    const matchesPromo = !showOnlyPromo || item.prijs < 15;
     const matchesCategory = selectedProductCategory === "" || item.categoriesList.includes(selectedProductCategory);
     
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesPromo;
   }).sort((a, b) => {
     if (productSortBy === "naam-az") return (a.titel || "").localeCompare(b.titel || "");
     if (productSortBy === "naam-za") return (b.titel || "").localeCompare(a.titel || "");
@@ -275,13 +280,25 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </View>
         </View>
-
+        
         <TextInput 
           style={styles.searchBar} 
           placeholder="Zoek een product..." 
           value={productSearchQuery} 
           onChangeText={setProductSearchQuery} 
         />
+
+        <View style={styles.pickerCardContainer}>
+          <View style={styles.switchWrapper}>
+            <Text style={styles.switchLabel}>Toon alleen artikelen in promotie</Text>
+            <Switch
+              value={showOnlyPromo}
+              onValueChange={(value) => setShowOnlyPromo(value)}
+              trackColor={{ false: "#767577", true: "#8ba653" }}
+              thumbColor={showOnlyPromo ? "#236b41" : "#f4f3f4"}
+            />
+          </View>
+        </View>
 
         <View style={styles.productGrid}>
           {filteredProducts.map(p => (
@@ -323,7 +340,9 @@ const styles = StyleSheet.create({
   pickerWrapper: { backgroundColor: '#f6f8fa', borderRadius: 10 },
   picker: { height: 50, width: '100%' },
   campusGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
-  productGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' }
+  productGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
+  switchWrapper: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+  switchLabel: { fontSize: 13, fontWeight: '700', color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.5 }
 });
 
 export default HomeScreen;
